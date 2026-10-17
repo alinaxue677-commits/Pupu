@@ -181,7 +181,7 @@ function frame(now){
   if(mood==='cold'&&pet.sleep<.5){pet.chatIn=(pet.chatIn==null?2:pet.chatIn)-dt;if(pet.chatIn<=0){pet.chatIn=5+Math.random()*3;SND.chatter()}}
   if(pet.sleep<.5){pet.crackIn=(pet.crackIn==null?2:pet.crackIn)-dt;if(pet.crackIn<=0){pet.crackIn=2+Math.random()*4;SND.crackle()}}
   if(mood==='angry'&&pet.sleep<.5&&!pet.dragging&&pet.puffT<=0&&pet.chewT<=0){pet.steamIn=(pet.steamIn==null?5:pet.steamIn)-dt;
-    if(pet.steamIn<=0&&pet.steamT<=0){pet.steamT=3;pet.steamIn=20+Math.random()*10;SND.steam()}}
+    if(pet.steamIn<=0&&pet.steamT<=0){pet.steamT=3;pet.steamIn=56;SND.steam()}}
   else if(mood!=='angry'){pet.steamT=0;pet.steamIn=5}
   if(pet.steamT>0)pet.steamT=Math.max(0,pet.steamT-dt);
   const canYawn=mood==='sleepy'&&pet.sleep<.5&&!pet.dragging&&!(pet.petting)&&pet.puffT<=0&&pet.chewT<=0;
