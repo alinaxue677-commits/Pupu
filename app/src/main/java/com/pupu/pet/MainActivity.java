@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
 
     private final Button[] moodButtons = new Button[MOODS.length];
     private Button toggle;
+    private Button soundBtn;
     private TextView hint;
     private boolean waitingForPermission = false;
 
@@ -126,6 +127,32 @@ public class MainActivity extends Activity {
             moodButtons[i] = b;
         }
 
+        TextView soundLabel = new TextView(this);
+        soundLabel.setText("声音");
+        soundLabel.setTextSize(13);
+        soundLabel.setLetterSpacing(0.12f);
+        soundLabel.setTextColor(Color.parseColor("#A99FBB"));
+        soundLabel.setPadding(0, (int) dp(24), 0, (int) dp(8));
+        root.addView(soundLabel);
+
+        soundBtn = new Button(this);
+        soundBtn.setAllCaps(false);
+        soundBtn.setTextSize(15);
+        soundBtn.setTextColor(Color.parseColor("#F3E9DC"));
+        soundBtn.setOnClickListener(v -> {
+            boolean on = !prefs().getBoolean("sound", true);
+            prefs().edit().putBoolean("sound", on).apply();
+            refresh();
+        });
+        root.addView(soundBtn, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) dp(46)));
+
+        TextView soundHint = new TextView(this);
+        soundHint.setText("打开后，噗噗被点、吃东西、打哈欠、睡觉打鼾时会发出小小的声音。手机静音或震动时它也会自动安静。");
+        soundHint.setTextSize(13);
+        soundHint.setTextColor(Color.parseColor("#A99FBB"));
+        soundHint.setPadding(0, (int) dp(8), 0, 0);
+        root.addView(soundHint);
+
         TextView how = new TextView(this);
         how.setText("怎么和噗噗玩\n\n"
                 + "点一下：它会“噗”地吐个烟圈\n"
@@ -157,6 +184,9 @@ public class MainActivity extends Activity {
         toggle.setText(on ? "收起噗噗" : "让噗噗出来");
         hint.setText(on ? "噗噗已经在桌面上了，回到桌面看看吧。"
                 : "第一次会请你打开“显示在其他应用上层”的权限，打开后返回这里就好。");
+        boolean sound = prefs().getBoolean("sound", true);
+        soundBtn.setText(sound ? "声音：开" : "声音：关");
+        soundBtn.setBackground(pill(sound ? "#3A2F4D" : "#262138", sound ? "#FFA24A" : "#3A3350"));
         String mood = prefs().getString("mood", "happy");
         for (int i = 0; i < MOODS.length; i++) {
             boolean sel = MOODS[i][0].equals(mood);

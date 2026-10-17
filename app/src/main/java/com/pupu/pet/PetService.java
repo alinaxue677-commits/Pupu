@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Icon;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -135,6 +136,7 @@ public class PetService extends Service {
         web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);
+        web.getSettings().setMediaPlaybackRequiresUserGesture(false);
         web.setVerticalScrollBarEnabled(false);
         web.setHorizontalScrollBarEnabled(false);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -233,6 +235,11 @@ public class PetService extends Service {
         @JavascriptInterface public String getMood() { return prefs.getString("mood", "happy"); }
         @JavascriptInterface public int getEaten() { return prefs.getInt("eaten", 0); }
         @JavascriptInterface public void setEaten(int n) { prefs.edit().putInt("eaten", n).apply(); }
+        @JavascriptInterface public boolean soundOn() {
+            if (!prefs.getBoolean("sound", true)) return false;
+            AudioManager am = getSystemService(AudioManager.class);
+            return am == null || am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL;
+        }
         @JavascriptInterface public void vibrate(int ms) { buzz(Math.max(5, Math.min(80, ms))); }
     }
 }

@@ -9,7 +9,7 @@ canvas{display:block;width:100%;height:100%}
 <script>
 (function(){
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-const A=window.Android||{getMood:()=> 'happy',getEaten:()=>0,setEaten:()=>{},vibrate:()=>{}};
+const A=window.Android||{getMood:()=> 'happy',getEaten:()=>0,setEaten:()=>{},vibrate:()=>{},soundOn:()=>false};
 
 const PAL={
   happy:{core:[255,246,196],mid:[255,176,64],edge:[255,104,48]},
@@ -42,6 +42,38 @@ addEventListener('resize',resize);resize();
 const lerp=(a,b,k)=>a+(b-a)*k;
 const rgba=(c,a)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
 const mix=(a,b,k)=>[lerp(a[0],b[0],k),lerp(a[1],b[1],k),lerp(a[2],b[2],k)];
+const soundEnabled=()=>{try{return !!A.soundOn()}catch(e){return false}};
+const SND=(function(){
+  let ac=null,out=null,nb=null;
+  function get(){
+    if(!ac){try{const C=window.AudioContext||window.webkitAudioContext;ac=new C();out=ac.createGain();out.gain.value=.55;out.connect(ac.destination)}catch(e){ac=null;return null}}
+    if(ac.state==='suspended'){try{ac.resume()}catch(e){}}
+    return ac;
+  }
+  function env(g,t,a,p,d,gain){g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(gain,t+a);g.gain.setValueAtTime(gain,t+a+p);g.gain.exponentialRampToValueAtTime(.0001,t+a+p+d)}
+  function noise(a,t,o){
+    if(!nb){nb=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const c=nb.getChannelData(0);for(let i=0;i<c.length;i++)c[i]=Math.random()*2-1}
+    const s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),p=o.p||0,len=o.a+p+o.d;
+    s.buffer=nb;f.type=o.type;f.Q.value=o.q||1;f.frequency.setValueAtTime(o.f0,t);f.frequency.linearRampToValueAtTime(o.f1!=null?o.f1:o.f0,t+len);
+    env(g,t,o.a,p,o.d,o.gain);s.connect(f);f.connect(g);g.connect(out);s.start(t,Math.random());s.stop(t+len+.05)}
+  function tone(a,t,o){
+    const osc=a.createOscillator(),g=a.createGain(),p=o.p||0,len=o.a+p+o.d;osc.type=o.wave||'sine';
+    osc.frequency.setValueAtTime(o.f0,t);osc.frequency.exponentialRampToValueAtTime(o.f1||o.f0,t+len);
+    env(g,t,o.a,p,o.d,o.gain);let n=osc;
+    if(o.lp){const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=o.lp;osc.connect(f);n=f}
+    n.connect(g);g.connect(out);osc.start(t);osc.stop(t+len+.05)}
+  function play(fn,dl){if(!soundEnabled())return;const a=get();if(!a)return;try{fn(a,a.currentTime+.02+(dl||0))}catch(e){}}
+  return{
+    unlock(){get()},
+    puff:()=>play((a,t)=>{noise(a,t,{type:'bandpass',f0:1100,f1:350,q:1.4,a:.01,d:.17,gain:.5});tone(a,t,{f0:330,f1:150,a:.005,d:.12,gain:.18})}),
+    crunch:()=>play((a,t)=>{for(let i=0;i<3;i++)noise(a,t+i*.12,{type:'highpass',f0:2600,f1:1700,q:.8,a:.004,d:.06,gain:.32})}),
+    yawn:dl=>play((a,t)=>{tone(a,t,{wave:'triangle',f0:300,f1:520,a:.3,d:.01,gain:.07,lp:1400});tone(a,t+.31,{wave:'triangle',f0:520,f1:280,a:.05,p:.45,d:.7,gain:.07,lp:1400});noise(a,t,{type:'lowpass',f0:900,f1:600,a:.45,p:.45,d:.6,gain:.12})},dl),
+    snore:()=>play((a,t)=>{noise(a,t,{type:'lowpass',f0:280,f1:520,q:3,a:.9,d:.4,gain:.35});tone(a,t,{wave:'sawtooth',f0:68,f1:84,a:.9,d:.4,gain:.06,lp:260});
+      tone(a,t+1.45,{f0:1250,f1:700,a:.08,p:.15,d:.45,gain:.045});noise(a,t+1.45,{type:'bandpass',f0:1600,f1:900,q:2,a:.08,p:.1,d:.5,gain:.06})}),
+    sigh:()=>play((a,t)=>{noise(a,t,{type:'lowpass',f0:1500,f1:500,a:.08,p:.2,d:.7,gain:.28})}),
+    squeak:()=>play((a,t)=>{tone(a,t,{f0:880,f1:1500,a:.01,d:.13,gain:.09});tone(a,t+.15,{f0:1400,f1:1100,a:.01,d:.12,gain:.07})})
+  };
+})();
 const baseR=()=>Math.min(W*.24,H*.18);
 const R=()=>baseR()*pet.size*(1+Math.min(.2,eaten*.008))*(1+pet.feedBoost*.2);
 const CX=()=>W/2, CY=()=>H*.64;
@@ -54,7 +86,7 @@ window.pet={
   touch(){},
   puff(){
     const woke=wake(),r=R(),cx=CX(),cy=CY()+pet.hy;
-    pet.sv+=7;pet.puffT=.45;
+    pet.sv+=7;pet.puffT=.45;SND.puff();
     parts.push({k:'ring',x:cx,y:cy+r*.32,r:r*.12,life:0,max:1});
     spawnSparks(8,cx,cy-r*.6,2.2,110);
     parts.push({k:'text',s:woke?'噗？':'噗！',x:cx+r*.35,y:cy-r*1.5,life:0,max:1.1});
@@ -110,7 +142,7 @@ function drawEyes(cx,cy,r,kind,t){
     }
   }
 }
-function relief(){const r=R(),cx=CX(),cy=CY()+pet.hy;pet.reliefT=1.4;pet.fear=0;pet.sv+=4;
+function relief(){const r=R(),cx=CX(),cy=CY()+pet.hy;pet.reliefT=1.4;SND.sigh();pet.fear=0;pet.sv+=4;
   for(let i=0;i<3;i++)parts.push({k:'sigh',x:cx+r*.05,y:cy+r*.3,vx:20+i*7,vy:-16-i*9,life:-i*.12,max:1.6,r:r*.09});
   parts.push({k:'text',s:'呼～',x:cx+r*.35,y:cy-r*1.5,life:0,max:1.3});try{A.vibrate(10)}catch(e){}}
 
@@ -129,7 +161,7 @@ function frame(now){
   const fearT=pet.dragging?Math.max(0,Math.min(1,(pet.height-.55)/.3)):0;
   pet.fear=lerp(pet.fear,fearT,Math.min(1,dt*(fearT>pet.fear?5:3)));pet.reliefT=Math.max(0,pet.reliefT-dt);
   const canYawn=mood==='sleepy'&&pet.sleep<.5&&!pet.dragging&&!(pet.petting)&&pet.puffT<=0&&pet.chewT<=0;
-  if(canYawn){pet.yawnIn-=dt;if(pet.yawnIn<=0&&pet.yawnT<=0){pet.yawnT=3.4;pet.yawnIn=45+Math.random()*10;pet.yawnFx=0}}
+  if(canYawn){pet.yawnIn-=dt;if(pet.yawnIn<=0&&pet.yawnT<=0){pet.yawnT=3.4;SND.yawn(.25);pet.yawnIn=45+Math.random()*10;pet.yawnFx=0}}
   else if(pet.yawnT>0&&(mood!=='sleepy'||pet.dragging))pet.yawnT=0;
   if(pet.yawnT>0)pet.yawnT=Math.max(0,pet.yawnT-dt);
   const yp=pet.yawnT>0?1-pet.yawnT/3.4:0,ysm=(a,b,x)=>{x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x)},
@@ -156,7 +188,7 @@ function frame(now){
   pet.nextBlink-=dt;if(pet.nextBlink<=0){pet.blinkT=.16;pet.nextBlink=2+Math.random()*3.5}
   if(pet.blinkT>0){pet.blinkT-=dt;pet.blink=Math.sin(Math.max(0,pet.blinkT)/.16*Math.PI)}else pet.blink=0;
 
-  if(pet.fear>.5&&!pet.fearBuzz){pet.fearBuzz=true;try{A.vibrate(12)}catch(e){}}if(pet.fear<.2)pet.fearBuzz=false;
+  if(pet.fear>.5&&!pet.fearBuzz){pet.fearBuzz=true;SND.squeak();try{A.vibrate(12)}catch(e){}}if(pet.fear<.2)pet.fearBuzz=false;
   const r=R(),cx=CX()+(mood==='cold'&&pet.sleep<.5?Math.sin(t*38)*1.2:0)+Math.sin(t*47)*1.6*pet.fear,cy=CY()+pet.hy;
   pet.lookIn-=dt;if(pet.lookIn<=0){pet.lookIn=1.5+Math.random()*3;pet.lookT={x:(Math.random()-.5)*r*.14,y:(Math.random()-.5)*r*.08}}
   let lt=pet.lookT;if(pet.dragging)lt={x:Math.max(-1,Math.min(1,-pet.vx/400))*r*.08,y:-r*.03};if(pet.sleep>.6)lt={x:0,y:0};
@@ -164,12 +196,13 @@ function frame(now){
   pet.puffT=Math.max(0,pet.puffT-dt);pet.chewT=Math.max(0,pet.chewT-dt);
 
   if(mood==='angry'&&pet.sleep<.5){pet.wispIn-=dt;if(pet.wispIn<=0){pet.wispIn=.4;parts.push({k:'wisp',x:cx+r*.3,y:cy-r*(1+pet.tip*.8),vx:(Math.random()-.5)*8,vy:-26,life:0,max:1.3,r:r*.08})}}
+  if(pet.sleep>.85){pet.snoreIn=(pet.snoreIn||1)-dt;if(pet.snoreIn<=0){pet.snoreIn=3.8;SND.snore()}}else pet.snoreIn=1;
   if(pet.sleep>.8){pet.zIn-=dt;if(pet.zIn<=0){pet.zIn=1.8;parts.push({k:'z',x:cx+r*.5,y:cy-r*.6,life:0,max:2.4})}}
   if(pet.sleep<.5&&Math.random()<dt*pet.flick){parts.push({k:'spark',x:cx+r*.25+(Math.random()-.5)*r*.4,y:cy-r*(.9+pet.tip*.6),vx:(Math.random()-.5)*16,vy:-35-Math.random()*30,life:0,max:.9,r:1+Math.random()*1.3})}
 
   for(let i=sticks.length-1;i>=0;i--){const s=sticks[i];s.vy+=700*dt;s.y+=s.vy*dt;s.rot+=s.vr*dt;s.x=lerp(s.x,CX(),dt*3);
     if(s.y>=CY()+pet.hy-r*.2){sticks.splice(i,1);eaten++;try{A.setEaten(eaten)}catch(e){}
-      pet.chewT=1.1;pet.feedBoost=Math.min(.6,pet.feedBoost+.3);pet.sv+=6;try{A.vibrate(20)}catch(e){}
+      pet.chewT=1.1;SND.crunch();pet.feedBoost=Math.min(.6,pet.feedBoost+.3);pet.sv+=6;try{A.vibrate(20)}catch(e){}
       spawnSparks(14,CX(),CY()-r*.3,2.6,130);parts.push({k:'text',s:'咔嚓',x:CX()+r*.3,y:CY()-r*1.5,life:0,max:1})}}
 
   ctx.clearRect(0,0,W,H);
@@ -214,7 +247,7 @@ function frame(now){
     if(op>.02){ctx.fillStyle='#3b1d2e';ell(mx,my+r*.02*op,r*(.05+.06*op),r*.15*op);ctx.fillStyle='#ff8fa8';ell(mx,my+r*.1*op,r*.055*op,r*.04*op)}
     if(yp>.84&&yp<.96){const ch=Math.abs(Math.sin((yp-.84)/.12*Math.PI*2));ctx.fillStyle='#3b1d2e';ell(mx,my,r*.04,r*.012+r*.025*ch)}
     if(!pet.yawnFx&&yp>.45){pet.yawnFx=1;parts.push({k:'text',s:'哈～',x:cx+r*.4,y:cy-r*1.3,life:0,max:1.8})}
-    if(pet.yawnFx===1&&yp>.72){pet.yawnFx=2;parts.push({k:'sigh',x:cx,y:cy+r*.3,vx:10,vy:-10,life:0,max:1.8,r:r*.07})}
+    if(pet.yawnFx===1&&yp>.72){pet.yawnFx=2;SND.sigh();parts.push({k:'sigh',x:cx,y:cy+r*.3,vx:10,vy:-10,life:0,max:1.8,r:r*.07})}
     if(pet.yawnFx===2&&yp>.84){pet.yawnFx=3;pet.sv+=3}}
   if(pet.fear>.25){const a=Math.min(1,(pet.fear-.25)*2),sx=cx+r*.66,sy=cy-r*.32+((t*.6)%1)*r*.12,sr=r*.07;
     ctx.fillStyle=`rgba(175,220,255,${a*.9})`;ctx.beginPath();ctx.moveTo(sx,sy-sr*1.8);ctx.quadraticCurveTo(sx+sr*1.1,sy-sr*.2,sx,sy+sr);ctx.quadraticCurveTo(sx-sr*1.1,sy-sr*.2,sx,sy-sr*1.8);ctx.fill()}
