@@ -70,6 +70,16 @@ const SND=(function(){
     yawn:dl=>play((a,t)=>{tone(a,t,{wave:'triangle',f0:300,f1:520,a:.3,d:.01,gain:.07,lp:1400});tone(a,t+.31,{wave:'triangle',f0:520,f1:280,a:.05,p:.45,d:.7,gain:.07,lp:1400});noise(a,t,{type:'lowpass',f0:900,f1:600,a:.45,p:.45,d:.6,gain:.12})},dl),
     snore:()=>play((a,t)=>{noise(a,t,{type:'lowpass',f0:280,f1:520,q:3,a:.9,d:.4,gain:.35});tone(a,t,{wave:'sawtooth',f0:68,f1:84,a:.9,d:.4,gain:.06,lp:260});
       tone(a,t+1.45,{f0:1250,f1:700,a:.08,p:.15,d:.45,gain:.045});noise(a,t+1.45,{type:'bandpass',f0:1600,f1:900,q:2,a:.08,p:.1,d:.5,gain:.06})}),
+    whoop:()=>play((a,t)=>{tone(a,t,{f0:400,f1:900,a:.01,d:.18,gain:.07})}),
+    boing:()=>play((a,t)=>{tone(a,t,{f0:320,f1:180,a:.005,d:.2,gain:.1});tone(a,t+.02,{wave:'triangle',f0:640,f1:420,a:.005,d:.12,gain:.03})}),
+    hop:()=>play((a,t)=>{tone(a,t,{f0:520,f1:780,a:.005,d:.07,gain:.05})}),
+    coo:()=>play((a,t)=>{tone(a,t,{wave:'triangle',f0:600,f1:780,a:.05,d:.18,gain:.06,lp:1800});tone(a,t+.2,{wave:'triangle',f0:780,f1:650,a:.03,d:.28,gain:.05,lp:1800})}),
+    huff:()=>play((a,t)=>{noise(a,t,{type:'bandpass',f0:700,f1:300,a:.01,d:.22,gain:.35});tone(a,t,{wave:'sawtooth',f0:160,f1:110,a:.01,d:.15,gain:.05,lp:500})}),
+    chatter:()=>play((a,t)=>{for(let i=0;i<4;i++)noise(a,t+i*.07,{type:'highpass',f0:3000,a:.003,d:.03,gain:.13})}),
+    chirp:()=>play((a,t)=>{tone(a,t,{f0:500,f1:1000,a:.01,d:.16,gain:.07})}),
+    chime:()=>play((a,t)=>{tone(a,t,{f0:880,a:.005,d:.35,gain:.05});tone(a,t+.08,{f0:1320,a:.005,d:.4,gain:.035})}),
+    crackle:()=>play((a,t)=>{const n=1+(Math.random()*3|0);for(let i=0;i<n;i++)noise(a,t+i*(.04+Math.random()*.08),{type:'highpass',f0:1800+Math.random()*1200,a:.002,d:.015+Math.random()*.02,gain:.05+Math.random()*.04})}),
+    drop:()=>play((a,t)=>{tone(a,t,{f0:1400,f1:500,a:.01,d:.35,gain:.04})}),
     sigh:()=>play((a,t)=>{noise(a,t,{type:'lowpass',f0:1500,f1:500,a:.08,p:.2,d:.7,gain:.28})}),
     squeak:()=>play((a,t)=>{tone(a,t,{f0:880,f1:1500,a:.01,d:.13,gain:.09});tone(a,t+.15,{f0:1400,f1:1100,a:.01,d:.12,gain:.07})})
   };
@@ -89,15 +99,16 @@ window.pet={
     pet.sv+=7;pet.puffT=.45;SND.puff();
     parts.push({k:'ring',x:cx,y:cy+r*.32,r:r*.12,life:0,max:1});
     spawnSparks(8,cx,cy-r*.6,2.2,110);
+    if(woke)SND.chirp();
     parts.push({k:'text',s:woke?'噗？':'噗！',x:cx+r*.35,y:cy-r*1.5,life:0,max:1.1});
   },
-  feed(){wake();sticks.push({x:CX()+(Math.random()-.5)*16,y:-14,vy:0,rot:Math.random()*2,vr:4+Math.random()*3})},
+  feed(){wake();SND.drop();sticks.push({x:CX()+(Math.random()-.5)*16,y:-14,vy:0,rot:Math.random()*2,vr:4+Math.random()*3})},
   longPressStart(){wake();pet.petting=true},
   longPressEnd(){pet.petting=false},
-  dragStart(){wake();pet.dragging=true},
+  dragStart(){wake();pet.dragging=true;SND.whoop()},
   dragMove(vx,h){pet.vx=lerp(pet.vx,vx,.4);if(h!=null)pet.height=h;pet.lastAct=performance.now()},
-  dragEnd(){const scared=pet.fear>.3;pet.dragging=false;pet.vx=0;if(scared)relief();else pet.sv+=8},
-  setMood(m){if(PAL[m]){if(m==='sleepy'&&mood!=='sleepy')pet.yawnIn=6;mood=m;wake();pet.sv+=4}}
+  dragEnd(){const scared=pet.fear>.3;pet.dragging=false;pet.vx=0;if(scared)relief();else{pet.sv+=8;SND.boing()}},
+  setMood(m){if(PAL[m]){if(m==='sleepy'&&mood!=='sleepy')pet.yawnIn=6;if(m!==mood)SND.chime();mood=m;wake();pet.sv+=4}}
 };
 
 function shape(cx,cy,r,o,t){
@@ -160,6 +171,10 @@ function frame(now){
 
   const fearT=pet.dragging?Math.max(0,Math.min(1,(pet.height-.55)/.3)):0;
   pet.fear=lerp(pet.fear,fearT,Math.min(1,dt*(fearT>pet.fear?5:3)));pet.reliefT=Math.max(0,pet.reliefT-dt);
+  if(shy>.6&&!pet.cooed){pet.cooed=true;SND.coo()}if(shy<.2)pet.cooed=false;
+  if(mood==='angry'&&pet.sleep<.5){pet.huffIn=(pet.huffIn==null?2:pet.huffIn)-dt;if(pet.huffIn<=0){pet.huffIn=4+Math.random()*3;SND.huff()}}
+  if(mood==='cold'&&pet.sleep<.5){pet.chatIn=(pet.chatIn==null?2:pet.chatIn)-dt;if(pet.chatIn<=0){pet.chatIn=5+Math.random()*3;SND.chatter()}}
+  if(pet.sleep<.5){pet.crackIn=(pet.crackIn==null?2:pet.crackIn)-dt;if(pet.crackIn<=0){pet.crackIn=2+Math.random()*4;SND.crackle()}}
   const canYawn=mood==='sleepy'&&pet.sleep<.5&&!pet.dragging&&!(pet.petting)&&pet.puffT<=0&&pet.chewT<=0;
   if(canYawn){pet.yawnIn-=dt;if(pet.yawnIn<=0&&pet.yawnT<=0){pet.yawnT=3.4;SND.yawn(.25);pet.yawnIn=45+Math.random()*10;pet.yawnFx=0}}
   else if(pet.yawnT>0&&(mood!=='sleepy'||pet.dragging))pet.yawnT=0;
@@ -180,7 +195,7 @@ function frame(now){
   pet.feedBoost=Math.max(0,pet.feedBoost-dt*.05);
 
   pet.sv+=(-170*pet.s-9*pet.sv)*dt;pet.s+=pet.sv*dt;
-  if(mood==='happy'&&pet.sleep<.2&&!pet.dragging&&!pet.petting){pet.hopIn-=dt;if(pet.hopIn<=0&&pet.hy===0){pet.hv=-200;pet.hopIn=3+Math.random()*4;pet.sv-=3}}
+  if(mood==='happy'&&pet.sleep<.2&&!pet.dragging&&!pet.petting){pet.hopIn-=dt;if(pet.hopIn<=0&&pet.hy===0){pet.hv=-200;SND.hop();pet.hopIn=3+Math.random()*4;pet.sv-=3}}
   if(pet.hy<0||pet.hv<0){pet.hv+=900*dt;pet.hy+=pet.hv*dt;if(pet.hy>=0){pet.hy=0;pet.hv=0;pet.sv+=5}}
   if(!pet.dragging)pet.vx=lerp(pet.vx,0,Math.min(1,dt*6));
   pet.lean=lerp(pet.lean,.26-Math.max(-.7,Math.min(.7,pet.vx*.0025)),Math.min(1,dt*8));

@@ -147,7 +147,7 @@ public class MainActivity extends Activity {
         root.addView(soundBtn, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) dp(46)));
 
         TextView soundHint = new TextView(this);
-        soundHint.setText("打开后，噗噗被点、吃东西、打哈欠、睡觉打鼾时会发出小小的声音。手机静音或震动时它也会自动安静。");
+        soundHint.setText("打开后，噗噗的各种动作和心情都会有小小的声音，比如被点、被拎起来、吃东西、打哈欠、生气、发冷、睡觉打鼾，平时身上还会轻轻噼啪作响。手机静音或震动时它也会自动安静。");
         soundHint.setTextSize(13);
         soundHint.setTextColor(Color.parseColor("#A99FBB"));
         soundHint.setPadding(0, (int) dp(8), 0, 0);
