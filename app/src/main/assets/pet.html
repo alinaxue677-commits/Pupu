@@ -97,6 +97,7 @@ function drawEyes(cx,cy,r,kind,t){
       case 'shy':ctx.beginPath();ctx.moveTo(x-w*1.1,y+h*.35);ctx.quadraticCurveTo(x,y-h*1.1,x+w*1.1,y+h*.35);ctx.stroke();break;
       case 'sleepy':ell(x,y+h*.35,w,h*.45*(1-pet.blink*.8));break;
       case 'sleep':ctx.beginPath();ctx.moveTo(x-w,y);ctx.quadraticCurveTo(x,y+h*.9,x+w,y);ctx.stroke();break;
+      case 'squeezeIn':ctx.beginPath();ctx.moveTo(x+side*w,y-h*.75);ctx.lineTo(x-side*w*.6,y);ctx.lineTo(x+side*w,y+h*.75);ctx.stroke();break;
       case 'squeeze':ctx.beginPath();ctx.moveTo(x-side*w,y-h*.75);ctx.lineTo(x+side*w*.6,y);ctx.lineTo(x-side*w,y+h*.75);ctx.stroke();break;
       case 'angry':{const hh=h*(1-pet.blink*.92);ell(x,y+h*.15,w,hh*.9);ctx.beginPath();ctx.moveTo(x+side*w*1.3,y-h*1.4);ctx.lineTo(x-side*w*1.2,y-h*.75);ctx.stroke();break}
       case 'cold':ell(x,y,w*.6,w*.6);break;
@@ -199,7 +200,8 @@ function frame(now){
   if(pet.dragging&&pet.fear>.35)kind='scared';
   if(pet.reliefT>.4)kind='relieved';
   if(pet.yawnT>0)kind='yawn';
-  if(pet.puffT>0||pet.chewT>0)kind='squeeze';
+  if(pet.chewT>0)kind='squeeze';
+  if(pet.puffT>0)kind='squeezeIn';
   const blush=Math.max(shy,mood==='shy'?1:0);
   if(blush>.2){ctx.fillStyle=`rgba(255,110,150,${blush*.55})`;ell(cx-r*.62+pet.look.x,cy+r*.28,r*.12,r*.07);ell(cx+r*.58+pet.look.x,cy+r*.28,r*.1,r*.06)}
   drawEyes(cx,cy,r,kind,t);
