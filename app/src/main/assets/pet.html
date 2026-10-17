@@ -211,11 +211,11 @@ function frame(now){
     const mx=cx+pet.look.x*.5,my=cy+r*.36;
     if(op>.02){ctx.fillStyle='#3b1d2e';ell(mx,my+r*.02*op,r*(.05+.06*op),r*.15*op);ctx.fillStyle='#ff8fa8';ell(mx,my+r*.1*op,r*.055*op,r*.04*op)}
     if(yp>.84&&yp<.96){const ch=Math.abs(Math.sin((yp-.84)/.12*Math.PI*2));ctx.fillStyle='#3b1d2e';ell(mx,my,r*.04,r*.012+r*.025*ch)}
-    const ta=sm(.78,.88,yp)*(1-sm(.96,1,yp));if(ta>0){const tx=cx-r*.6,ty=cy+r*.17+sm(.85,1,yp)*r*.06,tr=r*.045;
-      ctx.fillStyle=`rgba(175,220,255,${ta})`;ctx.beginPath();ctx.moveTo(tx,ty-tr*1.8);ctx.quadraticCurveTo(tx+tr*1.1,ty-tr*.2,tx,ty+tr);ctx.quadraticCurveTo(tx-tr*1.1,ty-tr*.2,tx,ty-tr*1.8);ctx.fill()}
-    if(!pet.yawnFx&&yp>.45){pet.yawnFx=1;parts.push({k:'text',s:'哈～',x:cx+r*.4,y:cy-r*1.3,life:0,max:1.8})}
+    if(!pet.yawnFx&&yp>.45)pet.yawnFx=1;
     if(pet.yawnFx===1&&yp>.72){pet.yawnFx=2;parts.push({k:'sigh',x:cx,y:cy+r*.3,vx:10,vy:-10,life:0,max:1.8,r:r*.07})}
     if(pet.yawnFx===2&&yp>.84){pet.yawnFx=3;pet.sv+=3}}
+  if(pet.fear>.25){const a=Math.min(1,(pet.fear-.25)*2),sx=cx+r*.66,sy=cy-r*.32+((t*.6)%1)*r*.12,sr=r*.07;
+    ctx.fillStyle=`rgba(175,220,255,${a*.9})`;ctx.beginPath();ctx.moveTo(sx,sy-sr*1.8);ctx.quadraticCurveTo(sx+sr*1.1,sy-sr*.2,sx,sy+sr);ctx.quadraticCurveTo(sx-sr*1.1,sy-sr*.2,sx,sy-sr*1.8);ctx.fill()}
   if(pet.puffT>0){ctx.fillStyle='#3b1d2e';ell(cx+pet.look.x*.6,cy+r*.32,r*.05,r*.06*(.6+pet.puffT))}
   if(pet.chewT>0){ctx.fillStyle='#3b1d2e';ell(cx+pet.look.x*.6,cy+r*.32,r*.06,r*.035*(1+Math.abs(Math.sin(t*18))))}
   if(front)drawOrb();
