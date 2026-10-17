@@ -186,7 +186,9 @@ public class PetService extends Service {
                     float vx = (e.getRawX() - lastRawX) / d / dt;
                     lastRawX = e.getRawX();
                     lastMoveTime = now;
-                    js("pet.dragMove(" + Math.round(vx) + ")");
+                    int maxY = Math.max(1, getResources().getDisplayMetrics().heightPixels - lp.height);
+                    float height = 1f - (float) lp.y / maxY; // 0 = bottom of screen, 1 = top
+                    js("pet.dragMove(" + Math.round(vx) + "," + String.format(java.util.Locale.US, "%.3f", height) + ")");
                 }
                 return true;
             }
